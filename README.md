@@ -1,2 +1,2 @@
-# LLPTagger
-Long-lived particle tagger
+# LLP
+Long-lived particle search using NN tagger
