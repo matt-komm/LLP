@@ -27,31 +27,7 @@ process.options   = cms.untracked.PSet(
     allowUnscheduled = cms.untracked.bool(True)
 )
 
-#merge GenParticles for easy matching of GenJets to vertices
-process.genParticlesMerged = cms.EDProducer("MergedGenParticleProducer",
-    inputPruned = cms.InputTag("prunedGenParticles"),
-    inputPacked = cms.InputTag("packedGenParticles")
-)
-
-#select only stable particles (status=1) for reclustering GenJets for the matching; exclude neutrinos
-from RecoJets.JetProducers.ak4GenJets_cfi import ak4GenJets
-process.genParticlesForGenJets = cms.EDFilter(
-    "CandPtrSelector", 
-    src = cms.InputTag("genParticlesMerged"),
-    cut = cms.string("status==1 && abs(pdgId) != 12 && abs(pdgId) != 14 && abs(pdgId) != 16")
-)
-
-#recluster GenJets
-process.genJetsReclustered = ak4GenJets.clone(
-    src = 'genParticlesForGenJets'
-)
-
-#produce DisplacedGenVertices and match to GenJets
-process.displacedGenVertices = cms.EDProducer(
-    "DisplacedGenVertexProducer",
-    srcGenParticles = cms.InputTag("genParticlesMerged"),
-    srcGenJets = cms.InputTag("genJetsReclustered")
-)
+process.load('LLPTagger.DisplacedVertex.GenDisplacedVertices_cff')
 
 process.MINIAODSIMoutput = cms.OutputModule("PoolOutputModule",                     
     compressionAlgorithm = cms.untracked.string('LZMA'),    
@@ -71,4 +47,6 @@ process.MINIAODSIMoutput = cms.OutputModule("PoolOutputModule",
     overrideInputFileSplitLevels = cms.untracked.bool(True) 
 )           
             
-process.endpath = cms.EndPath(process.MINIAODSIMoutput)             
+
+
+process.endpath = cms.EndPath(process.DisplacedGenVertexSequence*process.MINIAODSIMoutput)             
