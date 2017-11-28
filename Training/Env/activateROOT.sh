@@ -4,8 +4,8 @@
 # this is necessary because the original package that is checked
 # out by conda is broken
 
-cd ${CONDA_PREFIX}
-source bin/thisroot.sh
+cd 
+source ${CONDA_PREFIX}/bin/thisroot.sh
 cd -
 
 echo "Activate: ROOT has been sourced. Environment settings are ready. "

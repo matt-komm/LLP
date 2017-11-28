@@ -56,14 +56,26 @@ function run_setup()
 
 
     echo "Create environment for CPU"
-    #conda create --file conda_tensorflow_cpu_env.yml
-
+    
     conda create -n tf_cpu python=2.7 --yes || return 1
     source activate tf_cpu || return 1
     
     echo "Installing packages"
     conda install -c nlesc root-numpy=4.4.0 --yes || return 1
-    pip install --ignore-installed --upgrade -r packages.pip || return 1
+    pip install --upgrade -r packages_cpu.pip || return 1
+    source deactivate || return 1
+    
+    
+    
+    echo "Create environment for GPU"
+    
+    conda create -n tf_gpu python=2.7 --yes || return 1
+    source activate tf_gpu || return 1
+    
+    echo "Installing packages"
+    conda install -c nlesc root-numpy=4.4.0 --yes || return 1
+    pip install --upgrade -r packages_gpu.pip || return 1
+    source deactivate || return 1
 }
 
 run_setup $1
