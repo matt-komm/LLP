@@ -59,7 +59,6 @@ function run_setup()
     
     echo "CMGTools/" >> .git/info/exclude
     
-    #execute "git clone -o ra1-private git@github.com:matt-komm/cmgtools-lite-private.git CMGTools" || return 1
     execute "git clone -o ra1-private git@github.com:CMSRA1/cmgtools-lite-private.git CMGTools" || return 1
     cd CMGTools
     
@@ -68,11 +67,26 @@ function run_setup()
     execute "git submodule init" || return 1
     execute "git submodule update" || return 1
     
+    execute "git remote add mkomm-cmgtools git@github.com:matt-komm/cmgtools-lite-private.git" || return 1
+    
+    execute "git fetch --no-tags mkomm-cmgtools" || return 1
+    execute "git checkout mkomm-cmgtools/80X-ra1-0.7.x-Moriond17Prod_LLT" || return 1
+    
     cd ${CMSSW_BASE}/src || return 1
+    
+    execute "git clone git@github.com:matt-komm/LLPTag.git" || return 1
 
-    execute "ln -s ../../LLPTagger" || return 1
-
-    execute "scram b || scram b -j6" || return 1
+    #add legacy Ntuple producer
+    echo "DeepNTuples/" >> .git/info/exclude
+    execute "git clone git@github.com:matt-komm/DeepNTuples.git" || return 1
+    cd DeepNTuples || return 1
+    execute "git submodule init" || return 1
+    execute "git submodule update" || return 1
+    #cd ${CMSSW_BASE}/src || return 1
+    #execute "git cms-merge-topic -u mverzett:DeepFlavour-from-CMSSW_8_0_21" || return 1
+    #cd ${CMSSW_BASE}/src || return 1
+    
+    execute "scram b || scram b || scram b -j6" || return 1
 }
 
 run_setup
