@@ -53,8 +53,9 @@ function run_setup()
 
     CONDA_BIN=$INSTALL_DIR/miniconda/bin
     export PATH=$CONDA_BIN:$PATH
-
-
+    
+    export TMPDIR=$INSTALL_DIR/tmp
+    
     echo "Create environment for CPU"
     
     conda create -n tf_cpu python=2.7 --yes || return 1
@@ -78,12 +79,15 @@ function run_setup()
     conda install -c conda-forge boost=1.64.0 --yes || return 1
     pip install -r packages_gpu.pip || return 1
     source deactivate || return 1
+    
+    rm -rf $INSTALL_DIR/tmp
+    
+    echo "export PATH="$INSTALL_DIR"/miniconda/bin:\$PATH" > $SCRIPT_DIR/env.sh
+    echo "export LD_PRELOAD=$CONDA_PREFIX/lib/libmkl_core.so:$CONDA_PREFIX/lib/libmkl_sequential.so:\$LD_PRELOAD" >> $SCRIPT_DIR/env.sh
 }
 
 run_setup $1
 
-echo "export PATH="$1"/miniconda/bin:\$PATH" > $SCRIPT_DIR/env.sh
-echo "export LD_PRELOAD=$CONDA_PREFIX/lib/libmkl_core.so:$CONDA_PREFIX/lib/libmkl_sequential.so:\$LD_PRELOAD" >> $SCRIPT_DIR/env.sh
 
 
 #export PATH=$CONDA_BIN:$PATH
