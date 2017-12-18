@@ -115,72 +115,68 @@ def model_deepFlavourReference(Inputs,nclasses,nregclasses,dropoutRate=0.1,momen
    
     batchnorm=True
     batchmomentum = momentum
-    with tf.device('/gpu:0'):
-        cpf  = Convolution1D(64, 1, kernel_initializer='lecun_uniform',  activation='relu', name='cpf_conv0')(cpf)
-        if batchnorm:
-            cpf = BatchNormalization(momentum=batchmomentum ,name='cpf_batchnorm0')(cpf)
-        cpf = Dropout(dropoutRate,name='cpf_dropout0')(cpf)                                                   
-        cpf  = Convolution1D(32, 1, kernel_initializer='lecun_uniform',  activation='relu', name='cpf_conv1')(cpf)
-        if batchnorm:
-            cpf = BatchNormalization(momentum=batchmomentum,name='cpf_batchnorm1')(cpf)
-        cpf = Dropout(dropoutRate,name='cpf_dropout1')(cpf)                                                   
-        cpf  = Convolution1D(32, 1, kernel_initializer='lecun_uniform',  activation='relu', name='cpf_conv2')(cpf)
-        if batchnorm:
-            cpf = BatchNormalization(momentum=batchmomentum,name='cpf_batchnorm2')(cpf)
-        cpf = Dropout(dropoutRate,name='cpf_dropout2')(cpf)                                                   
-        cpf  = Convolution1D(8, 1, kernel_initializer='lecun_uniform',  activation='relu' , name='cpf_conv3')(cpf)
+    cpf  = Convolution1D(64, 1, kernel_initializer='lecun_uniform',  activation='relu', name='cpf_conv0')(cpf)
+    if batchnorm:
+        cpf = BatchNormalization(momentum=batchmomentum ,name='cpf_batchnorm0')(cpf)
+    cpf = Dropout(dropoutRate,name='cpf_dropout0')(cpf)                                                   
+    cpf  = Convolution1D(32, 1, kernel_initializer='lecun_uniform',  activation='relu', name='cpf_conv1')(cpf)
+    if batchnorm:
+        cpf = BatchNormalization(momentum=batchmomentum,name='cpf_batchnorm1')(cpf)
+    cpf = Dropout(dropoutRate,name='cpf_dropout1')(cpf)                                                   
+    cpf  = Convolution1D(32, 1, kernel_initializer='lecun_uniform',  activation='relu', name='cpf_conv2')(cpf)
+    if batchnorm:
+        cpf = BatchNormalization(momentum=batchmomentum,name='cpf_batchnorm2')(cpf)
+    cpf = Dropout(dropoutRate,name='cpf_dropout2')(cpf)                                                   
+    cpf  = Convolution1D(8, 1, kernel_initializer='lecun_uniform',  activation='relu' , name='cpf_conv3')(cpf)
 
-        
-        cpf  = LSTM(150,go_backwards=True,implementation=2, name='cpf_lstm')(cpf)
-        cpf=BatchNormalization(momentum=momentum,name='cpflstm_batchnorm')(cpf)
-        cpf = Dropout(dropoutRate)(cpf)
     
+    cpf  = LSTM(150,go_backwards=True,implementation=2, name='cpf_lstm')(cpf)
+    cpf=BatchNormalization(momentum=momentum,name='cpflstm_batchnorm')(cpf)
+    cpf = Dropout(dropoutRate)(cpf)
+
+
+    npf = Convolution1D(32, 1, kernel_initializer='lecun_uniform',  activation='relu', name='npf_conv0')(npf)
+    if batchnorm:
+        npf = BatchNormalization(momentum=batchmomentum,name='npf_batchnorm0')(npf)
+    npf = Dropout(dropoutRate,name='npf_dropout0')(npf) 
+    npf = Convolution1D(16, 1, kernel_initializer='lecun_uniform',  activation='relu', name='npf_conv1')(npf)
+    if batchnorm:
+        npf = BatchNormalization(momentum=batchmomentum,name='npf_batchnorm1')(npf)
+    npf = Dropout(dropoutRate,name='npf_dropout1')(npf)
+    npf = Convolution1D(4, 1, kernel_initializer='lecun_uniform',  activation='relu' , name='npf_conv2')(npf)
+
+    npf = LSTM(50,go_backwards=True,implementation=2, name='npf_lstm')(npf)
+    npf=BatchNormalization(momentum=momentum,name='npflstm_batchnorm')(npf)
+    npf = Dropout(dropoutRate)(npf)
+
+
+
+    vtx = Convolution1D(64, 1, kernel_initializer='lecun_uniform',  activation='relu', name='vtx_conv0')(vtx)
+    if batchnorm:
+        vtx = BatchNormalization(momentum=batchmomentum,name='vtx_batchnorm0')(vtx)
+    vtx = Dropout(dropoutRate,name='vtx_dropout0')(vtx) 
+    vtx = Convolution1D(32, 1, kernel_initializer='lecun_uniform',  activation='relu', name='vtx_conv1')(vtx)
+    if batchnorm:
+        vtx = BatchNormalization(momentum=batchmomentum,name='vtx_batchnorm1')(vtx)
+    vtx = Dropout(dropoutRate,name='vtx_dropout1')(vtx)
+    vtx = Convolution1D(32, 1, kernel_initializer='lecun_uniform',  activation='relu', name='vtx_conv2')(vtx)
+    if batchnorm:
+        vtx = BatchNormalization(momentum=batchmomentum,name='vtx_batchnorm2')(vtx)
+    vtx = Dropout(dropoutRate,name='vtx_dropout2')(vtx)
+    vtx = Convolution1D(8, 1, kernel_initializer='lecun_uniform',  activation='relu', name='vtx_conv3')(vtx)
+
+    vtx = LSTM(50,go_backwards=True,implementation=2, name='vtx_lstm')(vtx)
+    vtx=BatchNormalization(momentum=momentum,name='vtxlstm_batchnorm')(vtx)
+    vtx = Dropout(dropoutRate)(vtx)
+
+
+
+
+    x = Concatenate()( [globalvars,cpf,npf,vtx ])
     
-    with tf.device('/gpu:1'):
-        npf = Convolution1D(32, 1, kernel_initializer='lecun_uniform',  activation='relu', name='npf_conv0')(npf)
-        if batchnorm:
-            npf = BatchNormalization(momentum=batchmomentum,name='npf_batchnorm0')(npf)
-        npf = Dropout(dropoutRate,name='npf_dropout0')(npf) 
-        npf = Convolution1D(16, 1, kernel_initializer='lecun_uniform',  activation='relu', name='npf_conv1')(npf)
-        if batchnorm:
-            npf = BatchNormalization(momentum=batchmomentum,name='npf_batchnorm1')(npf)
-        npf = Dropout(dropoutRate,name='npf_dropout1')(npf)
-        npf = Convolution1D(4, 1, kernel_initializer='lecun_uniform',  activation='relu' , name='npf_conv2')(npf)
+    x = block_deepFlavourDense(x,dropoutRate,active=True,batchnorm=True,batchmomentum=momentum)
 
-        npf = LSTM(50,go_backwards=True,implementation=2, name='npf_lstm')(npf)
-        npf=BatchNormalization(momentum=momentum,name='npflstm_batchnorm')(npf)
-        npf = Dropout(dropoutRate)(npf)
-    
-    
-    
-    with tf.device('/gpu:2'):
-        vtx = Convolution1D(64, 1, kernel_initializer='lecun_uniform',  activation='relu', name='vtx_conv0')(vtx)
-        if batchnorm:
-            vtx = BatchNormalization(momentum=batchmomentum,name='vtx_batchnorm0')(vtx)
-        vtx = Dropout(dropoutRate,name='vtx_dropout0')(vtx) 
-        vtx = Convolution1D(32, 1, kernel_initializer='lecun_uniform',  activation='relu', name='vtx_conv1')(vtx)
-        if batchnorm:
-            vtx = BatchNormalization(momentum=batchmomentum,name='vtx_batchnorm1')(vtx)
-        vtx = Dropout(dropoutRate,name='vtx_dropout1')(vtx)
-        vtx = Convolution1D(32, 1, kernel_initializer='lecun_uniform',  activation='relu', name='vtx_conv2')(vtx)
-        if batchnorm:
-            vtx = BatchNormalization(momentum=batchmomentum,name='vtx_batchnorm2')(vtx)
-        vtx = Dropout(dropoutRate,name='vtx_dropout2')(vtx)
-        vtx = Convolution1D(8, 1, kernel_initializer='lecun_uniform',  activation='relu', name='vtx_conv3')(vtx)
-
-        vtx = LSTM(50,go_backwards=True,implementation=2, name='vtx_lstm')(vtx)
-        vtx=BatchNormalization(momentum=momentum,name='vtxlstm_batchnorm')(vtx)
-        vtx = Dropout(dropoutRate)(vtx)
-
-
-
-    with tf.device('/cpu:0'):
-        x = Concatenate()( [globalvars,cpf,npf,vtx ])
-        
-    with tf.device('/gpu:2'):
-        x = block_deepFlavourDense(x,dropoutRate,active=True,batchnorm=True,batchmomentum=momentum)
-
-        flavour_pred=Dense(nclasses, activation='softmax',kernel_initializer='lecun_uniform',name='ID_pred')(x)
+    flavour_pred=Dense(nclasses, activation='softmax',kernel_initializer='lecun_uniform',name='ID_pred')(x)
 
     #reg = Concatenate()( [flavour_pred, ptreginput ] ) 
 
@@ -205,7 +201,7 @@ print len(fileList)
 
 
 featureList = {
-    #need to explicity specify length - is auto range not supported in 1.0.1
+    #need to explicity specify length - is auto range not supported in 1.0.1?
     'truth': tf.FixedLenFeature([24], tf.float32),
     'global': tf.FixedLenFeature([15], tf.float32),
     'Cpfcan': tf.FixedLenFeature([400], tf.float32),
@@ -266,7 +262,7 @@ def readFileMultiEntryAhead(filenameQueue, nBatches=200):
     parsedDataBatch['sv']=tf.reshape(parsedDataBatch['sv'],[-1,4,12])
     return parsedDataBatch
 
-batchSize = 20000
+batchSize = 10000
 
 #create queue and populate it with some filesnames from the list
 fileListQueue = tf.train.string_input_producer(fileList, num_epochs=2, shuffle=True)

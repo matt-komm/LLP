@@ -12,8 +12,6 @@ function setup_script()
     source activate tf_gpu
     source $SCRIPT_DIR/cuda.sh
 
-    export LD_PRELOAD=$CONDA_PREFIX/lib/libmkl_core.so:$CONDA_PREFIX/lib/libmkl_sequential.so
-
     source $SCRIPT_DIR/DeepJet/environment/env.sh
 
     export TF_CPP_MIN_LOG_LEVEL=2

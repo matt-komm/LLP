@@ -83,6 +83,7 @@ function run_setup()
 run_setup $1
 
 echo "export PATH="$1"/miniconda/bin:\$PATH" > $SCRIPT_DIR/env.sh
+echo "export LD_PRELOAD=$CONDA_PREFIX/lib/libmkl_core.so:$CONDA_PREFIX/lib/libmkl_sequential.so:\$LD_PRELOAD" >> $SCRIPT_DIR/env.sh
 
 
 #export PATH=$CONDA_BIN:$PATH

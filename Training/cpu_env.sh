@@ -10,9 +10,7 @@ function setup_script()
 
     source $SCRIPT_DIR/Env/env.sh
     source activate tf_cpu
-
-    export LD_PRELOAD=$CONDA_PREFIX/lib/libmkl_core.so:$CONDA_PREFIX/lib/libmkl_sequential.so
-
+    
     source $SCRIPT_DIR/DeepJet/environment/env.sh
 
     export TF_CPP_MIN_LOG_LEVEL=2

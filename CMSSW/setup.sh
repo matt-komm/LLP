@@ -59,19 +59,34 @@ function run_setup()
     
     echo "CMGTools/" >> .git/info/exclude
     
-    execute "git clone -o ra1-private git@github.com:CMSRA1/cmgtools-lite-private.git CMGTools" || return 1
-    cd CMGTools
+
+    execute "git clone -o ra1 git@github.com:CMSRA1/cmgtools-lite-private.git CMGTools" || return 1
     
-    execute "git checkout 80X-ra1-0.7.x-Moriond17Prod" || return 1
+    #make a sparse checkout instead (do not want other analyses filling up sandbox)
+    #cd CMGTools
+    #mkdir CMGTools
+    #cd CMGTools
+    #execute "git init" || return 1
+    #git config core.sparseCheckout true
+    #echo ".gitignore" >> .git/info/sparse-checkout
+    #echo ".gitmodules" >> .git/info/sparse-checkout
+    #echo "RA1" >> .git/info/sparse-checkout
+    #echo "Production" >> .git/info/sparse-checkout
+    #echo "RootTools" >> .git/info/sparse-checkout
+    #echo "TTHAnalysis/interface" >> .git/info/sparse-checkout
+    #echo "TTHAnalysis/src" >> .git/info/sparse-checkout
+    #echo "TTHAnalysis/python" >> .git/info/sparse-checkout
+    
+    
+    #execute "git remote add -f ra1 git@github.com:CMSRA1/cmgtools-lite-private.git" || return 1
+    execute "git remote add -f origin git@github.com:matt-komm/cmgtools-lite-private.git" || return 1
+
+    #execute "git checkout 80X-ra1-0.7.x-Moriond17Prod" || return 1
+    execute "git checkout 80X-ra1-0.7.x-Moriond17Prod-DNN" || return 1
     
     execute "git submodule init" || return 1
     execute "git submodule update" || return 1
-    
-    execute "git remote add mkomm-cmgtools git@github.com:matt-komm/cmgtools-lite-private.git" || return 1
-    
-    execute "git fetch --no-tags mkomm-cmgtools" || return 1
-    execute "git checkout mkomm-cmgtools/80X-ra1-0.7.x-Moriond17Prod_LLT" || return 1
-    
+
     cd ${CMSSW_BASE}/src || return 1
     
     execute "git clone git@github.com:matt-komm/LLPTag.git" || return 1
@@ -86,7 +101,7 @@ function run_setup()
     #execute "git cms-merge-topic -u mverzett:DeepFlavour-from-CMSSW_8_0_21" || return 1
     #cd ${CMSSW_BASE}/src || return 1
     
-    execute "scram b || scram b || scram b -j6" || return 1
+    execute "scram b || scram b -j4 || scram b -j4" || return 1
 }
 
 run_setup

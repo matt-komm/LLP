@@ -1,1 +1,2 @@
-export PATH=central/miniconda/bin:$PATH
+export PATH=env/miniconda/bin:$PATH
+export LD_PRELOAD=/vols/build/cms/mkomm/LLP/Training/Env/env/miniconda/envs/tf_gpu/lib/libmkl_core.so:/vols/build/cms/mkomm/LLP/Training/Env/env/miniconda/envs/tf_gpu/lib/libmkl_sequential.so:$LD_PRELOAD
