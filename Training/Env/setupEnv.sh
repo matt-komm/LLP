@@ -1,6 +1,6 @@
 #!/bin/bash
 
-
+SCRIPT_DIR=`dirname ${BASH_SOURCE[0]}`
 STOP=""
 
 function execute() 
@@ -62,7 +62,8 @@ function run_setup()
     
     echo "Installing packages"
     conda install -c nlesc root-numpy=4.4.0 --yes || return 1
-    pip install --upgrade -r packages_cpu.pip || return 1
+    conda install -c conda-forge boost=1.64.0 --yes || return 1
+    pip install -r packages_cpu.pip || return 1
     source deactivate || return 1
     
     
@@ -74,11 +75,15 @@ function run_setup()
     
     echo "Installing packages"
     conda install -c nlesc root-numpy=4.4.0 --yes || return 1
-    pip install --upgrade -r packages_gpu.pip || return 1
+    conda install -c conda-forge boost=1.64.0 --yes || return 1
+    pip install -r packages_gpu.pip || return 1
     source deactivate || return 1
 }
 
 run_setup $1
+
+echo "export PATH="$1"/miniconda/bin:\$PATH" > $SCRIPT_DIR/env.sh
+
 
 #export PATH=$CONDA_BIN:$PATH
 

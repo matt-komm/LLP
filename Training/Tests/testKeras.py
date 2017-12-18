@@ -3,7 +3,7 @@ import tensorflow as tf
 import keras
 import os
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
 
 print "Keras package" 
 print "  Installation: ",os.path.dirname(keras.__file__)
@@ -28,7 +28,7 @@ for dev in device_lib.list_local_devices():
         a = tf.constant([1, 2, 3, 4, 5, 6, 7])
         b = tf.constant([2, 3, 4, 5, 6, 7, 8])
         c = tf.add(a,b)
-        sess = tf.Session()#config=tf.ConfigProto(log_device_placement=True))
+        sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
         result = sess.run(c)
         sess.close()
     print "done"
