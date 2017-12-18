@@ -190,7 +190,7 @@ def model_deepFlavourReference(Inputs,nclasses,nregclasses,dropoutRate=0.1,momen
 fileList = []
 
 #filePath = "/media/matthias/HDD/matthias/Analysis/LLP/training/samples/rootFiles.txt"
-filePath = "/vols/cms/mkomm/LLP/samples/rootFiles.txt"
+filePath = "/vols/cms/mkomm/LLP/samples/rootFiles.uncompressed.txt"
 
 f = open(filePath)
 for l in f:
@@ -270,7 +270,6 @@ fileListQueue = tf.train.string_input_producer(fileList, num_epochs=2, shuffle=T
 #read multiple files simultaneously
 dataList = [readFileMultiEntryAhead(fileListQueue,100) for _ in range(6)] 
 #dequeueFromList = fileListQueue.deqtensorflow/core/platform/cpu_feature_guard.ccueue()
-print dataList
 
 minAfterDequeue = batchSize*3
 capacity = minAfterDequeue + 6 * batchSize
@@ -283,7 +282,7 @@ trainingBatch = tf.train.shuffle_batch_join(
     min_after_dequeue=minAfterDequeue,
     enqueue_many=True #requires to read examples in batches!
 )
-#print trainingBatch
+print trainingBatch
 
 
 globalvars = keras.layers.Input(tensor=trainingBatch['global'])
@@ -321,6 +320,7 @@ try:
     while not coord.should_stop():
         start_time = time.time()
 
+        loss_value = 0
         _, loss_value = sess.run([train_op, loss], feed_dict={K.learning_phase(): 0})
 
         
@@ -330,6 +330,8 @@ try:
         if step % 1 == 0:
             print 'Step %d: loss = %.2f (%.3f sec)' % (step, loss_value,duration)
         step += 1
+        if step > 10:
+            coord.request_stop()
 except tf.errors.OutOfRangeError:
     print('Done training for %d steps.' % (step))
 #sess.run(trainingBatch)

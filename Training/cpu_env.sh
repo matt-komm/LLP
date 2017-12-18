@@ -14,9 +14,10 @@ function setup_script()
     source $SCRIPT_DIR/DeepJet/environment/env.sh
 
     export TF_CPP_MIN_LOG_LEVEL=2
-    export OMP_NUM_THREADS=12 #reduce further if out-of-memory
+    export OMP_NUM_THREADS=4 #reduce further if out-of-memory
 
     ulimit -s unlimited
+    ulimit -v 8380000 #Kib; maximum on lx03 - about 8.6GB
 }
 
 setup_script
