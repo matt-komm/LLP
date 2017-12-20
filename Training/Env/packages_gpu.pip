@@ -6,3 +6,4 @@ matplotlib==2.0.0
 subprocess32==3.2.7
 tensorflow-gpu==1.4.0
 gpustat==0.4.1
+setGPU=0.0.7

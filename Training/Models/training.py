@@ -4,9 +4,21 @@ from keras import backend as K
 import os
 import time
 
+import imp
+try:
+    imp.find_module('setGPU')
+    import setGPU
+except ImportError:
+    pass
+
 from keras.layers import Dense, Dropout, Flatten,Convolution2D, Convolution1D,LSTM,Concatenate
 from keras.layers.pooling import MaxPooling2D
 from keras.layers.normalization import BatchNormalization
+
+from tensorflow.python.framework import graph_io
+from tensorflow.python.tools import freeze_graph
+from tensorflow.python.training import saver as saver_lib
+
 
 def block_deepFlavourConvolutions(charged,neutrals,vertices,dropoutRate,active=True,batchnorm=False,batchmomentum=0.6):
     '''
@@ -262,17 +274,17 @@ def readFileMultiEntryAhead(filenameQueue, nBatches=200):
     parsedDataBatch['sv']=tf.reshape(parsedDataBatch['sv'],[-1,4,12])
     return parsedDataBatch
 
-batchSize = 10000
+batchSize = 1000
 
 #create queue and populate it with some filesnames from the list
 fileListQueue = tf.train.string_input_producer(fileList, num_epochs=2, shuffle=True)
 
 #read multiple files simultaneously
-dataList = [readFileMultiEntryAhead(fileListQueue,100) for _ in range(6)] 
+dataList = [readFileMultiEntryAhead(fileListQueue,batchSize/100) for _ in range(6)] 
 #dequeueFromList = fileListQueue.deqtensorflow/core/platform/cpu_feature_guard.ccueue()
 
-minAfterDequeue = batchSize*3
-capacity = minAfterDequeue + 6 * batchSize
+minAfterDequeue = int(batchSize*1.5)
+capacity = minAfterDequeue + 3 * batchSize
 
 #trainingBatch = tf.train.batch_join(
 trainingBatch = tf.train.shuffle_batch_join(
@@ -321,16 +333,16 @@ try:
         start_time = time.time()
 
         loss_value = 0
-        _, loss_value = sess.run([train_op, loss], feed_dict={K.learning_phase(): 0})
+        #_, loss_value = sess.run([train_op, loss], feed_dict={K.learning_phase(): 0})
 
         
-        #data = sess.run(trainingBatch)
+        data = sess.run(trainingBatch)
         #print data
         duration = time.time() - start_time
         if step % 1 == 0:
             print 'Step %d: loss = %.2f (%.3f sec)' % (step, loss_value,duration)
         step += 1
-        if step > 10:
+        if step > 20:
             coord.request_stop()
 except tf.errors.OutOfRangeError:
     print('Done training for %d steps.' % (step))
@@ -341,10 +353,20 @@ except tf.errors.OutOfRangeError:
 #train_model.fit(epochs=1000, steps_per_epoch=1000)
 #sess.run(trainingBatch)
 
+saver = saver_lib.Saver(write_version="0.1")
+checkpoint_path = saver.save(
+    sess,
+    "checkpt",
+    global_step=step,
+    latest_filename="checkpoint_state"
+)
+graph_io.write_graph(sess.graph, self.get_temp_dir(), input_graph_name)
 
 
 coord.request_stop()
 coord.join(threads)
+
+
 K.clear_session()
 #print sess.run(dataList[0])
     

@@ -59,13 +59,10 @@ function run_setup()
     
     echo "CMGTools/" >> .git/info/exclude
     
-
-    execute "git clone -o ra1 git@github.com:CMSRA1/cmgtools-lite-private.git CMGTools" || return 1
     
     #make a sparse checkout instead (do not want other analyses filling up sandbox)
-    #cd CMGTools
     #mkdir CMGTools
-    #cd CMGTools
+    cd CMGTools
     #execute "git init" || return 1
     #git config core.sparseCheckout true
     #echo ".gitignore" >> .git/info/sparse-checkout
@@ -78,7 +75,9 @@ function run_setup()
     #echo "TTHAnalysis/python" >> .git/info/sparse-checkout
     
     
-    #execute "git remote add -f ra1 git@github.com:CMSRA1/cmgtools-lite-private.git" || return 1
+    execute "git clone -o ra1 git@github.com:CMSRA1/cmgtools-lite-private.git CMGTools" || return 1
+    cd CMGTools
+    
     execute "git remote add -f origin git@github.com:matt-komm/cmgtools-lite-private.git" || return 1
 
     #execute "git checkout 80X-ra1-0.7.x-Moriond17Prod" || return 1
@@ -89,7 +88,7 @@ function run_setup()
 
     cd ${CMSSW_BASE}/src || return 1
     
-    execute "git clone git@github.com:matt-komm/LLPTag.git" || return 1
+    execute "git clone git@github.com:matt-komm/XTag.git" || return 1
 
     #add legacy Ntuple producer
     echo "DeepNTuples/" >> .git/info/exclude
@@ -100,6 +99,9 @@ function run_setup()
     #cd ${CMSSW_BASE}/src || return 1
     #execute "git cms-merge-topic -u mverzett:DeepFlavour-from-CMSSW_8_0_21" || return 1
     #cd ${CMSSW_BASE}/src || return 1
+    
+    execute "git clone -b 80X https://gitlab.cern.ch/mrieger/CMSSW-DNN.git DNN" || return 1
+    execute "./DNN/setup_legacy.sh" || return 1
     
     execute "scram b || scram b -j4 || scram b -j4" || return 1
 }
