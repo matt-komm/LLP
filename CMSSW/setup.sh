@@ -100,8 +100,8 @@ function run_setup()
     #execute "git cms-merge-topic -u mverzett:DeepFlavour-from-CMSSW_8_0_21" || return 1
     #cd ${CMSSW_BASE}/src || return 1
     
-    execute "git clone -b 80X https://gitlab.cern.ch/mrieger/CMSSW-DNN.git DNN" || return 1
-    execute "./DNN/setup_legacy.sh" || return 1
+    #execute "git clone -b 80X https://gitlab.cern.ch/mrieger/CMSSW-DNN.git DNN" || return 1
+    #execute "./DNN/setup_legacy.sh" || return 1
     
     execute "scram b || scram b -j4 || scram b -j4" || return 1
 }
