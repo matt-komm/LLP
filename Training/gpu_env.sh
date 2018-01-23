@@ -12,10 +12,10 @@ function setup_script()
     source activate tf_gpu
     source $SCRIPT_DIR/cuda.sh
 
-    source $SCRIPT_DIR/DeepJet/environment/env.sh
+    #source $SCRIPT_DIR/DeepJet/environment/env.sh
 
     export TF_CPP_MIN_LOG_LEVEL=2
-    export OMP_NUM_THREADS=24
+    export OMP_NUM_THREADS=18
 
     ulimit -s unlimited
 }

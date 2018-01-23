@@ -5,7 +5,7 @@ import random
 
 rootFiles = []
 
-filePath = "/vols/cms/mkomm/LLP/samples/rootFiles.txt"
+filePath = "/vols/cms/mkomm/LLP/samples/rootFiles_stripped2.txt"
 
 f = open(filePath)
 for l in f:

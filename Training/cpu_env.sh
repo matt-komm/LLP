@@ -11,7 +11,7 @@ function setup_script()
     source $SCRIPT_DIR/Env/env.sh
     source activate tf_cpu
     
-    source $SCRIPT_DIR/DeepJet/environment/env.sh
+    #source $SCRIPT_DIR/DeepJet/environment/env.sh
 
     export TF_CPP_MIN_LOG_LEVEL=2
     export OMP_NUM_THREADS=4 #reduce further if out-of-memory

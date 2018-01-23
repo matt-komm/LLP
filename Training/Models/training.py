@@ -333,10 +333,10 @@ try:
         start_time = time.time()
 
         loss_value = 0
-        #_, loss_value = sess.run([train_op, loss], feed_dict={K.learning_phase(): 0})
+        _, loss_value = sess.run([train_op, loss], feed_dict={K.learning_phase(): 0})
 
         
-        data = sess.run(trainingBatch)
+        #data = sess.run(trainingBatch)
         #print data
         duration = time.time() - start_time
         if step % 1 == 0:
@@ -352,7 +352,7 @@ except tf.errors.OutOfRangeError:
 
 #train_model.fit(epochs=1000, steps_per_epoch=1000)
 #sess.run(trainingBatch)
-
+'''
 saver = saver_lib.Saver(write_version="0.1")
 checkpoint_path = saver.save(
     sess,
@@ -361,7 +361,7 @@ checkpoint_path = saver.save(
     latest_filename="checkpoint_state"
 )
 graph_io.write_graph(sess.graph, self.get_temp_dir(), input_graph_name)
-
+'''
 
 coord.request_stop()
 coord.join(threads)
