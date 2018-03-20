@@ -55,8 +55,13 @@ function run_setup()
     export PATH=$CONDA_BIN:$PATH
     
     export TMPDIR=$INSTALL_DIR/tmp
+    export TMPPATH=$TMPDIR
+    export TEMP=$TMPDIR
+    mkdir $TMPDIR
+   
     
     echo "Create environment for CPU"
+    rm -f /tmp/*
     
     conda create -n tf_cpu python=2.7 --yes || return 1
     source activate tf_cpu || return 1
@@ -64,12 +69,13 @@ function run_setup()
     echo "Installing packages"
     conda install -c nlesc root-numpy=4.4.0 --yes || return 1
     conda install -c conda-forge boost=1.64.0 --yes || return 1
-    pip install -r packages_cpu.pip || return 1
+    pip install --no-cache-dir -r packages_cpu.pip || return 1
     source deactivate || return 1
     
     
     
     echo "Create environment for GPU"
+    rm -f /tmp/*
     
     conda create -n tf_gpu python=2.7 --yes || return 1
     source activate tf_gpu || return 1
@@ -77,7 +83,7 @@ function run_setup()
     echo "Installing packages"
     conda install -c nlesc root-numpy=4.4.0 --yes || return 1
     conda install -c conda-forge boost=1.64.0 --yes || return 1
-    pip install -r packages_gpu.pip || return 1
+    pip install --no-cache-dir -r packages_gpu.pip || return 1
     source deactivate || return 1
     
     rm -rf $INSTALL_DIR/tmp

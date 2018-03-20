@@ -10,7 +10,10 @@ function setup_script()
 
     source $SCRIPT_DIR/Env/env.sh
     source activate tf_gpu
-    source $SCRIPT_DIR/cuda.sh
+    
+    export PATH=/usr/local/cuda-8.0/bin:$PATH
+    export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64:$LD_LIBRARY_PATH
+    source /vols/build/cms/mkomm/cuDNNv6_cuda8/setupCuDNN.sh
 
     #source $SCRIPT_DIR/DeepJet/environment/env.sh
 
