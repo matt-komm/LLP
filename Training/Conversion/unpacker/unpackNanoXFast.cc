@@ -2,6 +2,7 @@
 #include "TTree.h"
 #include "TTreeFormula.h"
 
+#include <fstream>
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -21,6 +22,9 @@ class UnpackedTree
         
         unsigned int jetorigin_isPU;
         unsigned int jetorigin_isUndefined;
+        
+        float jetorigin_displacement;
+        float jetorigin_decay_angle;
         
         unsigned int jetorigin_isB;
         unsigned int jetorigin_isBB;
@@ -102,6 +106,9 @@ class UnpackedTree
 
             tree_->Branch("jetorigin_isPU",&jetorigin_isPU,"jetorigin_isPU/I");
             tree_->Branch("jetorigin_isUndefined",&jetorigin_isUndefined,"jetorigin_isUndefined/I");
+            
+            tree_->Branch("jetorigin_displacement",&jetorigin_displacement,"jetorigin_displacement/F");
+            tree_->Branch("jetorigin_decay_angle",&jetorigin_decay_angle,"jetorigin_decay_angle/F");
             
             tree_->Branch("jetorigin_isB",&jetorigin_isB,"jetorigin_isB/I");
             tree_->Branch("jetorigin_isBB",&jetorigin_isBB,"jetorigin_isBB/I");
@@ -192,14 +199,15 @@ class UnpackedTree
         void fill()
         {
             outputFile_->cd();
-            //tree_->SetDirectory(outputFile_);
+            tree_->SetDirectory(outputFile_);
             tree_->Fill();
         }
         
         void close()
         {
+            outputFile_->cd();
             tree_->SetDirectory(outputFile_);
-            tree_->Write("",TObject::kOverwrite);
+            tree_->Write();
             outputFile_->Close();
         }
 };
@@ -223,6 +231,9 @@ class NanoXTree
         unsigned int njetorigin;
         float jetorigin_isPU[maxEntries];
         float jetorigin_isUndefined[maxEntries];
+        
+        float jetorigin_displacement[maxEntries];
+        float jetorigin_decay_angle[maxEntries];
         
         float jetorigin_isB[maxEntries];
         float jetorigin_isBB[maxEntries];
@@ -328,6 +339,9 @@ class NanoXTree
             
             tree_->SetBranchAddress("jetorigin_isPU",&jetorigin_isPU);
             tree_->SetBranchAddress("jetorigin_isUndefined",&jetorigin_isUndefined);
+            
+            tree_->SetBranchAddress("jetorigin_displacement",&jetorigin_displacement);
+            tree_->SetBranchAddress("jetorigin_decay_angle",&jetorigin_decay_angle);
             
             tree_->SetBranchAddress("jetorigin_isB",&jetorigin_isB);
             tree_->SetBranchAddress("jetorigin_isBB",&jetorigin_isBB);
@@ -498,7 +512,7 @@ class NanoXTree
                 return false;
             }
             
-            if (jetorigin_fromLLP[jet]<0)
+            if (jetorigin_fromLLP[jet]<0.5)
             {
                 //keep only 5% of all gluon jets
                 if (jetorigin_isG[jet]>0.5)
@@ -566,6 +580,9 @@ class NanoXTree
             
             unpackedTree.jetorigin_isPU = jetorigin_isPU[jet];
             unpackedTree.jetorigin_isUndefined = jetorigin_isUndefined[jet];
+            
+            unpackedTree.jetorigin_displacement = jetorigin_displacement[jet];
+            unpackedTree.jetorigin_decay_angle = jetorigin_decay_angle[jet];
             
             //make DJ and LLP categories exclusive
             unpackedTree.jetorigin_isB = jetorigin_isB[jet]>0.5 and jetorigin_fromLLP[jet]<0.5;
@@ -685,6 +702,12 @@ void printSyntax()
     std::cout<<"          unpackNanoX outputfile N infile [infile [infile ...]]"<<std::endl<<std::endl;
 }
 
+inline bool ends_with(std::string const & value, std::string const & ending)
+{
+    if (ending.size() > value.size()) return false;
+    return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
 int main(int argc, char **argv)
 {
     if (argc<4)
@@ -710,13 +733,39 @@ int main(int argc, char **argv)
     std::vector<unsigned int> entries;
     unsigned int total_entries = 0;
     
+    std::vector<std::string> inputFileNames;
     for (unsigned int iarg = 3; iarg<argc; ++iarg)
     {
+        std::string s(argv[iarg]);
+        if (ends_with(s,".root"))
+        {
+            inputFileNames.push_back(s);
+        }
+        else if(ends_with(s,".txt"))
+        {
+            std::ifstream input(s);
+            for( std::string line; getline( input, line ); )
+            {
+                if (line.size()>0)
+                {
+                    inputFileNames.push_back(line);
+                }
+            }
+        }
+        else
+        {
+            std::cout<<"Cannot parse file '"<<s<<"'"<<std::endl;
+            return 0;
+        }
+    }
+    
+    for (const auto& inputFileName: inputFileNames)
+    {
         //std::cout<<"   "<<argv[iarg]<<", nEvents="<<;
-        TFile* file = TFile::Open(argv[iarg]);
+        TFile* file = TFile::Open(inputFileName.c_str());
         if (not file)
         {
-            std::cout<<"File '"<<argv[iarg]<<"' cannot be read"<<std::endl;
+            std::cout<<"File '"<<inputFileName<<"' cannot be read"<<std::endl;
             continue;
         }
         
@@ -724,15 +773,14 @@ int main(int argc, char **argv)
         
         if (not tree)
         {
-            std::cout<<"Tree in file '"<<argv[iarg]<<"' cannot be read"<<std::endl;
+            std::cout<<"Tree in file '"<<inputFileName<<"' cannot be read"<<std::endl;
             continue;
         }
         int nEvents = tree->GetEntries();
-        std::cout<<"   "<<argv[iarg]<<", nEvents="<<nEvents<<std::endl;
+        std::cout<<"   "<<inputFileName<<", nEvents="<<nEvents<<std::endl;
         entries.push_back(nEvents);
         total_entries += nEvents;
         trees.emplace_back(std::make_unique<NanoXTree>(file,tree));
-        
     }
     
     std::vector<std::unique_ptr<UnpackedTree>> unpackedTrees;
@@ -749,7 +797,7 @@ int main(int argc, char **argv)
     std::vector<unsigned int> readEvents(entries.size(),0);
     for (unsigned int ientry = 0; ientry<total_entries; ++ientry)
     {
-        if (ientry%1000==0)
+        if (ientry%10000==0)
         {
             std::cout<<"Processing ... "<<100.*ientry/total_entries<<std::endl;
         }
@@ -808,7 +856,7 @@ int main(int argc, char **argv)
     for (size_t c = 0; c < eventsPerClassPerFile.size(); ++c)
     {
         std::cout<<"jet class "<<c<<": ";
-        for (size_t i = 0; i < entries.size(); ++i)
+        for (size_t i = 0; i < nOutputs; ++i)
         {
             std::cout<<eventsPerClassPerFile[c][i]<<", ";
         }
@@ -835,11 +883,11 @@ int main(int argc, char **argv)
         }
     }
     */
-    /*
+    
     for (auto& unpackedTree: unpackedTrees)
     {
-        unpackedTree.close();
+        unpackedTree->close();
     }
-    */
+    
     return 0;
 }
