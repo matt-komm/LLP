@@ -19,6 +19,7 @@ class UnpackedTree
         
         
         static constexpr int maxEntries = 25;
+        static constexpr int bufferSize = 64000; //default is 32kB
         
         unsigned int jetorigin_isPU;
         unsigned int jetorigin_isUndefined;
@@ -41,6 +42,7 @@ class UnpackedTree
         
         float global_pt;
         float global_eta;
+        float global_rho;
         
         unsigned int ncpf;
         float cpf_trackEtaRel[maxEntries];
@@ -86,6 +88,7 @@ class UnpackedTree
         
         unsigned int nsv;
         float sv_pt[maxEntries];
+        float sv_mass[maxEntries];
         float sv_deltaR[maxEntries];
         float sv_ntracks[maxEntries];
         float sv_chi2[maxEntries];
@@ -102,84 +105,89 @@ class UnpackedTree
             outputFile_(new TFile(fileName.c_str(),"RECREATE")),
             tree_(new TTree("jets","jets"))
         {
+
             tree_->SetDirectory(outputFile_); 
-
-            tree_->Branch("jetorigin_isPU",&jetorigin_isPU,"jetorigin_isPU/I");
-            tree_->Branch("jetorigin_isUndefined",&jetorigin_isUndefined,"jetorigin_isUndefined/I");
+            tree_->SetAutoSave(1000); //save after 1000 fills
+            tree_->Branch("jetorigin_isPU",&jetorigin_isPU,"jetorigin_isPU/I",bufferSize);
+            tree_->Branch("jetorigin_isUndefined",&jetorigin_isUndefined,"jetorigin_isUndefined/I",bufferSize);
             
-            tree_->Branch("jetorigin_displacement",&jetorigin_displacement,"jetorigin_displacement/F");
-            tree_->Branch("jetorigin_decay_angle",&jetorigin_decay_angle,"jetorigin_decay_angle/F");
+            tree_->Branch("jetorigin_displacement",&jetorigin_displacement,"jetorigin_displacement/F",bufferSize);
+            tree_->Branch("jetorigin_decay_angle",&jetorigin_decay_angle,"jetorigin_decay_angle/F",bufferSize);
             
-            tree_->Branch("jetorigin_isB",&jetorigin_isB,"jetorigin_isB/I");
-            tree_->Branch("jetorigin_isBB",&jetorigin_isBB,"jetorigin_isBB/I");
-            tree_->Branch("jetorigin_isGBB",&jetorigin_isGBB,"jetorigin_isGBB/I");
-            tree_->Branch("jetorigin_isLeptonic_B",&jetorigin_isLeptonic_B,"jetorigin_isLeptonic_B/I");
-            tree_->Branch("jetorigin_isLeptonic_C",&jetorigin_isLeptonic_C,"jetorigin_isLeptonic_C/I");
-            tree_->Branch("jetorigin_isC",&jetorigin_isC,"jetorigin_isC/I");
-            tree_->Branch("jetorigin_isCC",&jetorigin_isCC,"jetorigin_isCC/I");
-            tree_->Branch("jetorigin_isGCC",&jetorigin_isGCC,"jetorigin_isGCC/I");
-            tree_->Branch("jetorigin_isS",&jetorigin_isS,"jetorigin_isS/I");
-            tree_->Branch("jetorigin_isUD",&jetorigin_isUD,"jetorigin_isUD/I");
-            tree_->Branch("jetorigin_isG",&jetorigin_isG,"jetorigin_isG/I");
-            tree_->Branch("jetorigin_fromLLP",&jetorigin_fromLLP,"jetorigin_fromLLP/I");
+            tree_->Branch("jetorigin_isB",&jetorigin_isB,"jetorigin_isB/I",bufferSize);
+            tree_->Branch("jetorigin_isBB",&jetorigin_isBB,"jetorigin_isBB/I",bufferSize);
+            tree_->Branch("jetorigin_isGBB",&jetorigin_isGBB,"jetorigin_isGBB/I",bufferSize);
+            tree_->Branch("jetorigin_isLeptonic_B",&jetorigin_isLeptonic_B,"jetorigin_isLeptonic_B/I",bufferSize);
+            tree_->Branch("jetorigin_isLeptonic_C",&jetorigin_isLeptonic_C,"jetorigin_isLeptonic_C/I",bufferSize);
+            tree_->Branch("jetorigin_isC",&jetorigin_isC,"jetorigin_isC/I",bufferSize);
+            tree_->Branch("jetorigin_isCC",&jetorigin_isCC,"jetorigin_isCC/I",bufferSize);
+            tree_->Branch("jetorigin_isGCC",&jetorigin_isGCC,"jetorigin_isGCC/I",bufferSize);
+            tree_->Branch("jetorigin_isS",&jetorigin_isS,"jetorigin_isS/I",bufferSize);
+            tree_->Branch("jetorigin_isUD",&jetorigin_isUD,"jetorigin_isUD/I",bufferSize);
+            tree_->Branch("jetorigin_isG",&jetorigin_isG,"jetorigin_isG/I",bufferSize);
+            tree_->Branch("jetorigin_fromLLP",&jetorigin_fromLLP,"jetorigin_fromLLP/I",bufferSize);
             
-            tree_->Branch("global_pt",&global_pt);
-            tree_->Branch("global_eta",&global_eta);
+            tree_->Branch("global_pt",&global_pt,"global_pt/F",bufferSize);
+            tree_->Branch("global_eta",&global_eta,"global_eta/F",bufferSize);
+            tree_->Branch("fixedGridRhoFastjetAll",&global_rho,"fixedGridRhoFastjetAll/F",bufferSize);
 
-            tree_->Branch("ncpf",&ncpf,"ncpf/I");
-            tree_->Branch("cpf_trackEtaRel",&cpf_trackEtaRel,"cpf_trackEtaRel[ncpf]/F");
-            tree_->Branch("cpf_trackPtRel",&cpf_trackPtRel,"cpf_trackPtRel[ncpf]/F");
-            tree_->Branch("cpf_trackPPar",&cpf_trackPPar,"cpf_trackPPar[ncpf]/F");
-            tree_->Branch("cpf_trackDeltaR",&cpf_trackDeltaR,"cpf_trackDeltaR[ncpf]/F");
-            tree_->Branch("cpf_trackPtRatio",&cpf_trackPtRatio,"cpf_trackPtRatio[ncpf]/F");
-            tree_->Branch("cpf_trackPParRatio",&cpf_trackPParRatio,"cpf_trackPParRatio[ncpf]/F");
-            tree_->Branch("cpf_trackSip2dVal",&cpf_trackSip2dVal,"cpf_trackSip2dVal[ncpf]/F");
-            tree_->Branch("cpf_trackSip2dSig",&cpf_trackSip2dSig,"cpf_trackSip2dSig[ncpf]/F");
-            tree_->Branch("cpf_trackSip3dVal",&cpf_trackSip3dVal,"cpf_trackSip3dVal[ncpf]/F");
-            tree_->Branch("cpf_trackSip3dSig",&cpf_trackSip3dSig,"cpf_trackSip3dSig[ncpf]/F");
-            tree_->Branch("cpf_trackJetDistVal",&cpf_trackJetDistVal,"cpf_trackJetDistVal[ncpf]/F");
-            tree_->Branch("cpf_trackJetDistSig",&cpf_trackJetDistSig,"cpf_trackJetDistSig[ncpf]/F");
-            tree_->Branch("cpf_ptrel",&cpf_ptrel,"cpf_ptrel[ncpf]/F");
-            tree_->Branch("cpf_drminsv",&cpf_drminsv,"cpf_drminsv[ncpf]/F");
-            tree_->Branch("cpf_vertex_association",&cpf_vertex_association,"cpf_vertex_association[ncpf]/F");
-            tree_->Branch("cpf_puppi_weight",&cpf_puppi_weight,"cpf_puppi_weight[ncpf]/F");
-            tree_->Branch("cpf_track_chi2",&cpf_track_chi2,"cpf_track_chi2[ncpf]/F");
-            tree_->Branch("cpf_track_quality",&cpf_track_quality,"cpf_track_quality[ncpf]/F");
-            tree_->Branch("cpf_jetmassdroprel",&cpf_jetmassdroprel,"cpf_jetmassdroprel[ncpf]/F");
-            tree_->Branch("cpf_relIso01",&cpf_relIso01,"cpf_relIso01[ncpf]/F");
+            tree_->Branch("ncpf",&ncpf,"ncpf/I",bufferSize);
+            tree_->Branch("cpf_trackEtaRel",&cpf_trackEtaRel,"cpf_trackEtaRel[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_trackPtRel",&cpf_trackPtRel,"cpf_trackPtRel[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_trackPPar",&cpf_trackPPar,"cpf_trackPPar[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_trackDeltaR",&cpf_trackDeltaR,"cpf_trackDeltaR[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_trackPtRatio",&cpf_trackPtRatio,"cpf_trackPtRatio[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_trackPParRatio",&cpf_trackPParRatio,"cpf_trackPParRatio[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_trackSip2dVal",&cpf_trackSip2dVal,"cpf_trackSip2dVal[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_trackSip2dSig",&cpf_trackSip2dSig,"cpf_trackSip2dSig[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_trackSip3dVal",&cpf_trackSip3dVal,"cpf_trackSip3dVal[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_trackSip3dSig",&cpf_trackSip3dSig,"cpf_trackSip3dSig[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_trackJetDistVal",&cpf_trackJetDistVal,"cpf_trackJetDistVal[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_trackJetDistSig",&cpf_trackJetDistSig,"cpf_trackJetDistSig[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_ptrel",&cpf_ptrel,"cpf_ptrel[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_drminsv",&cpf_drminsv,"cpf_drminsv[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_vertex_association",&cpf_vertex_association,"cpf_vertex_association[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_puppi_weight",&cpf_puppi_weight,"cpf_puppi_weight[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_track_chi2",&cpf_track_chi2,"cpf_track_chi2[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_track_quality",&cpf_track_quality,"cpf_track_quality[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_jetmassdroprel",&cpf_jetmassdroprel,"cpf_jetmassdroprel[ncpf]/F",bufferSize);
+            tree_->Branch("cpf_relIso01",&cpf_relIso01,"cpf_relIso01[ncpf]/F",bufferSize);
             
-            tree_->Branch("csv_trackSumJetEtRatio",&csv_trackSumJetEtRatio,"csv_trackSumJetEtRatio/F");
-            tree_->Branch("csv_trackSumJetDeltaR",&csv_trackSumJetDeltaR,"csv_trackSumJetDeltaR/F");
-            tree_->Branch("csv_vertexCategory",&csv_vertexCategory,"csv_vertexCategory/F");
-            tree_->Branch("csv_trackSip2dValAboveCharm",&csv_trackSip2dValAboveCharm,"csv_trackSip2dValAboveCharm/F");
-            tree_->Branch("csv_trackSip2dSigAboveCharm",&csv_trackSip2dSigAboveCharm,"csv_trackSip2dSigAboveCharm/F");
-            tree_->Branch("csv_trackSip3dValAboveCharm",&csv_trackSip3dValAboveCharm,"csv_trackSip3dValAboveCharm/F");
-            tree_->Branch("csv_trackSip3dSigAboveCharm",&csv_trackSip3dSigAboveCharm,"csv_trackSip3dSigAboveCharm/F");
-            tree_->Branch("csv_jetNSelectedTracks",&csv_jetNSelectedTracks,"csv_jetNSelectedTracks/F");
-            tree_->Branch("csv_jetNTracksEtaRel",&csv_jetNTracksEtaRel,"csv_jetNTracksEtaRel/F");
+            tree_->Branch("csv_trackSumJetEtRatio",&csv_trackSumJetEtRatio,"csv_trackSumJetEtRatio/F",bufferSize);
+            tree_->Branch("csv_trackSumJetDeltaR",&csv_trackSumJetDeltaR,"csv_trackSumJetDeltaR/F",bufferSize);
+            tree_->Branch("csv_vertexCategory",&csv_vertexCategory,"csv_vertexCategory/F",bufferSize);
+            tree_->Branch("csv_trackSip2dValAboveCharm",&csv_trackSip2dValAboveCharm,"csv_trackSip2dValAboveCharm/F",bufferSize);
+            tree_->Branch("csv_trackSip2dSigAboveCharm",&csv_trackSip2dSigAboveCharm,"csv_trackSip2dSigAboveCharm/F",bufferSize);
+            tree_->Branch("csv_trackSip3dValAboveCharm",&csv_trackSip3dValAboveCharm,"csv_trackSip3dValAboveCharm/F",bufferSize);
+            tree_->Branch("csv_trackSip3dSigAboveCharm",&csv_trackSip3dSigAboveCharm,"csv_trackSip3dSigAboveCharm/F",bufferSize);
+            tree_->Branch("csv_jetNSelectedTracks",&csv_jetNSelectedTracks,"csv_jetNSelectedTracks/F",bufferSize);
+            tree_->Branch("csv_jetNTracksEtaRel",&csv_jetNTracksEtaRel,"csv_jetNTracksEtaRel/F",bufferSize);
 
-            tree_->Branch("nnpf",&nnpf,"nnpf/I");
-            tree_->Branch("npf_ptrel",&npf_ptrel,"npf_ptrel[nnpf]/F");
-            tree_->Branch("npf_deltaR",&npf_deltaR,"npf_deltaR[nnpf]/F");
-            tree_->Branch("npf_isGamma",&npf_isGamma,"npf_isGamma[nnpf]/F");
-            tree_->Branch("npf_hcal_fraction",&npf_hcal_fraction,"npf_hcal_fraction[nnpf]/F");
-            tree_->Branch("npf_drminsv",&npf_drminsv,"npf_drminsv[nnpf]/F");
-            tree_->Branch("npf_puppi_weight",&npf_puppi_weight,"npf_puppi_weight[nnpf]/F");
-            tree_->Branch("npf_jetmassdroprel",&npf_jetmassdroprel,"npf_jetmassdroprel[nnpf]/F");
-            tree_->Branch("npf_relIso01",&npf_relIso01,"npf_relIso01[nnpf]/F");
+            tree_->Branch("nnpf",&nnpf,"nnpf/I",bufferSize);
+            tree_->Branch("npf_ptrel",&npf_ptrel,"npf_ptrel[nnpf]/F",bufferSize);
+            tree_->Branch("npf_deltaR",&npf_deltaR,"npf_deltaR[nnpf]/F",bufferSize);
+            tree_->Branch("npf_isGamma",&npf_isGamma,"npf_isGamma[nnpf]/F",bufferSize);
+            tree_->Branch("npf_hcal_fraction",&npf_hcal_fraction,"npf_hcal_fraction[nnpf]/F",bufferSize);
+            tree_->Branch("npf_drminsv",&npf_drminsv,"npf_drminsv[nnpf]/F",bufferSize);
+            tree_->Branch("npf_puppi_weight",&npf_puppi_weight,"npf_puppi_weight[nnpf]/F",bufferSize);
+            tree_->Branch("npf_jetmassdroprel",&npf_jetmassdroprel,"npf_jetmassdroprel[nnpf]/F",bufferSize);
+            tree_->Branch("npf_relIso01",&npf_relIso01,"npf_relIso01[nnpf]/F",bufferSize);
 
-            tree_->Branch("nsv",&nsv,"nsv/I");
-            tree_->Branch("sv_pt",&sv_pt,"sv_pt[nsv]/F");
-            tree_->Branch("sv_deltaR",&sv_deltaR,"sv_deltaR[nsv]/F");
-            tree_->Branch("sv_ntracks",&sv_ntracks,"sv_ntracks[nsv]/F");
-            tree_->Branch("sv_chi2",&sv_chi2,"sv_chi2[nsv]/F");
-            tree_->Branch("sv_normchi2",&sv_normchi2,"sv_normchi2[nsv]/F");
-            tree_->Branch("sv_dxy",&sv_dxy,"sv_dxy[nsv]/F");
-            tree_->Branch("sv_dxysig",&sv_dxysig,"sv_dxysig[nsv]/F");
-            tree_->Branch("sv_d3d",&sv_d3d,"sv_d3d[nsv]/F");
-            tree_->Branch("sv_d3dsig",&sv_d3dsig,"sv_d3dsig[nsv]/F");
-            tree_->Branch("sv_costhetasvpv",&sv_costhetasvpv,"sv_costhetasvpv[nsv]/F");
-            tree_->Branch("sv_enratio",&sv_enratio,"sv_enratio[nsv]/F");
+            tree_->Branch("nsv",&nsv,"nsv/I",bufferSize);
+            tree_->Branch("sv_pt",&sv_pt,"sv_pt[nsv]/F",bufferSize);
+            tree_->Branch("sv_mass",&sv_deltaR,"sv_mass[nsv]/F",bufferSize);
+            tree_->Branch("sv_deltaR",&sv_deltaR,"sv_deltaR[nsv]/F",bufferSize);
+            tree_->Branch("sv_ntracks",&sv_ntracks,"sv_ntracks[nsv]/F",bufferSize);
+            tree_->Branch("sv_chi2",&sv_chi2,"sv_chi2[nsv]/F",bufferSize);
+            tree_->Branch("sv_normchi2",&sv_normchi2,"sv_normchi2[nsv]/F",bufferSize);
+            tree_->Branch("sv_dxy",&sv_dxy,"sv_dxy[nsv]/F",bufferSize);
+            tree_->Branch("sv_dxysig",&sv_dxysig,"sv_dxysig[nsv]/F",bufferSize);
+            tree_->Branch("sv_d3d",&sv_d3d,"sv_d3d[nsv]/F",bufferSize);
+            tree_->Branch("sv_d3dsig",&sv_d3dsig,"sv_d3dsig[nsv]/F",bufferSize);
+            tree_->Branch("sv_costhetasvpv",&sv_costhetasvpv,"sv_costhetasvpv[nsv]/F",bufferSize);
+            tree_->Branch("sv_enratio",&sv_enratio,"sv_enratio[nsv]/F",bufferSize);
+        
+            tree_->SetBasketSize("*",bufferSize); //default is 16kB
         }
         
         //root does not behave properly
@@ -198,15 +206,15 @@ class UnpackedTree
         
         void fill()
         {
-            outputFile_->cd();
-            tree_->SetDirectory(outputFile_);
+            //outputFile_->cd();
+            //tree_->SetDirectory(outputFile_);
             tree_->Fill();
         }
         
         void close()
         {
             outputFile_->cd();
-            tree_->SetDirectory(outputFile_);
+            //tree_->SetDirectory(outputFile_);
             tree_->Write();
             outputFile_->Close();
         }
@@ -220,7 +228,7 @@ class NanoXTree
         
         unsigned int ientry_;
         
-        static constexpr int maxEntries = 500;
+        static constexpr int maxEntries = 250; //25*10 -> allows for a maximum of 10 jets per event
         
         unsigned int nJet;
         float Jet_eta[maxEntries];
@@ -251,6 +259,7 @@ class NanoXTree
         unsigned int nglobal;
         float global_pt[maxEntries];
         float global_eta[maxEntries];
+        float global_rho;
         
         unsigned int ncpflength;
         float cpflength_length[maxEntries];
@@ -306,6 +315,7 @@ class NanoXTree
         
         unsigned int nsv[maxEntries];
         float sv_pt[maxEntries];
+        float sv_mass[maxEntries];
         float sv_deltaR[maxEntries];
         float sv_ntracks[maxEntries];
         float sv_chi2[maxEntries];
@@ -359,7 +369,7 @@ class NanoXTree
             tree_->SetBranchAddress("nglobal",&nglobal);
             tree_->SetBranchAddress("global_pt",&global_pt);
             tree_->SetBranchAddress("global_eta",&global_eta);
-            
+            tree_->SetBranchAddress("fixedGridRhoFastjetAll",&global_rho);
             
             tree_->SetBranchAddress("ncpflength",&ncpflength);
             tree_->SetBranchAddress("cpflength_length",&cpflength_length);
@@ -415,6 +425,7 @@ class NanoXTree
             
             tree_->SetBranchAddress("nsv",&nsv);
             tree_->SetBranchAddress("sv_pt",&sv_pt);
+            tree_->SetBranchAddress("sv_mass",&sv_mass);
             tree_->SetBranchAddress("sv_deltaR",&sv_deltaR);
             tree_->SetBranchAddress("sv_ntracks",&sv_ntracks);
             tree_->SetBranchAddress("sv_chi2",&sv_chi2);
@@ -514,23 +525,23 @@ class NanoXTree
             
             if (jetorigin_fromLLP[jet]<0.5)
             {
-                //keep only 5% of all gluon jets
+                //keep only 25% of all gluon jets
                 if (jetorigin_isG[jet]>0.5)
                 {
-                    if (uniform_dist_(randomGenerator_)<0.95)
+                    if (uniform_dist_(randomGenerator_)<0.75)
                     {
                         return false;
                     }
                 }
-                
-                //keep only 30% of all light jets
+                /*
+                //keep only 50% of all light jets
                 if (jetorigin_isUD[jet]>0.5 or jetorigin_isS[jet]>0.5)
                 {
-                    if (uniform_dist_(randomGenerator_)<0.7)
+                    if (uniform_dist_(randomGenerator_)<0.5)
                     {
                         return false;
                     }
-                }
+                }*/
             }
             
             return true;
@@ -601,6 +612,7 @@ class NanoXTree
             
             unpackedTree.global_pt = global_pt[jet];
             unpackedTree.global_eta = global_eta[jet];
+            unpackedTree.global_rho = global_rho;
             
             int cpf_offset = 0;
             for (size_t i = 0; i < jet; ++i)
@@ -633,6 +645,29 @@ class NanoXTree
                 unpackedTree.cpf_jetmassdroprel[i] = cpf_jetmassdroprel[cpf_offset+i];
                 unpackedTree.cpf_relIso01[i] = cpf_relIso01[cpf_offset+i];
             }
+            for (size_t i = unpackedTree.ncpf; i < 25; ++i)
+            {
+                unpackedTree.cpf_trackEtaRel[i] = 0;
+                unpackedTree.cpf_trackPtRel[i] = 0;
+                unpackedTree.cpf_trackPPar[i] = 0;
+                unpackedTree.cpf_trackDeltaR[i] = 0;
+                unpackedTree.cpf_trackPtRatio[i] = 0;
+                unpackedTree.cpf_trackPParRatio[i] = 0;
+                unpackedTree.cpf_trackSip2dVal[i] = 0;
+                unpackedTree.cpf_trackSip2dSig[i] = 0;
+                unpackedTree.cpf_trackSip3dVal[i] = 0;
+                unpackedTree.cpf_trackSip3dSig[i] = 0;
+                unpackedTree.cpf_trackJetDistVal[i] = 0;
+                unpackedTree.cpf_trackJetDistSig[i] = 0;
+                unpackedTree.cpf_ptrel[i] = 0;
+                unpackedTree.cpf_drminsv[i] = 0;
+                unpackedTree.cpf_vertex_association[i] = 0;
+                unpackedTree.cpf_puppi_weight[i] = 0;
+                unpackedTree.cpf_track_chi2[i] = 0;
+                unpackedTree.cpf_track_quality[i] = 0;
+                unpackedTree.cpf_jetmassdroprel[i] = 0;
+                unpackedTree.cpf_relIso01[i] = 0;
+            }
             
             unpackedTree.csv_trackSumJetEtRatio = csv_trackSumJetEtRatio[jet];
             
@@ -664,6 +699,17 @@ class NanoXTree
                 unpackedTree.npf_jetmassdroprel[i] = npf_jetmassdroprel[npf_offset+i];
                 unpackedTree.npf_relIso01[i] = npf_relIso01[npf_offset+i];
             }
+            for (size_t i = unpackedTree.nnpf; i < 25; ++i)
+            {
+                unpackedTree.npf_ptrel[i] = 0;
+                unpackedTree.npf_deltaR[i] = 0;
+                unpackedTree.npf_isGamma[i] = 0;
+                unpackedTree.npf_hcal_fraction[i] = 0;
+                unpackedTree.npf_drminsv[i] = 0;
+                unpackedTree.npf_puppi_weight[i] = 0;
+                unpackedTree.npf_jetmassdroprel[i] = 0;
+                unpackedTree.npf_relIso01[i] = 0;
+            }
             
 
             int sv_offset = 0;
@@ -676,6 +722,7 @@ class NanoXTree
             for (size_t i = 0; i < unpackedTree.nsv; ++i)
             {
                 unpackedTree.sv_pt[i] = sv_pt[sv_offset+i];
+                unpackedTree.sv_mass[i] = sv_mass[sv_offset+i];
                 unpackedTree.sv_deltaR[i] = sv_deltaR[sv_offset+i];
                 unpackedTree.sv_ntracks[i] = sv_ntracks[sv_offset+i];
                 unpackedTree.sv_chi2[i] = sv_chi2[sv_offset+i];
@@ -688,13 +735,27 @@ class NanoXTree
                 unpackedTree.sv_enratio[i] = sv_enratio[sv_offset+i];
             }
             
+            for (size_t i = unpackedTree.nsv; i < 4; ++i)
+            {
+                unpackedTree.sv_pt[i] = 0;
+                unpackedTree.sv_mass[i] = 0;
+                unpackedTree.sv_deltaR[i] = 0;
+                unpackedTree.sv_ntracks[i] = 0;
+                unpackedTree.sv_chi2[i] = 0;
+                unpackedTree.sv_normchi2[i] = 0;
+                unpackedTree.sv_dxy[i] = 0;
+                unpackedTree.sv_dxysig[i] = 0;
+                unpackedTree.sv_d3d[i] = 0;
+                unpackedTree.sv_d3dsig[i] = 0;
+                unpackedTree.sv_costhetasvpv[i] = 0;
+                unpackedTree.sv_enratio[i] = 0;
+            }
+            
             unpackedTree.fill();
             return true;
         }
        
 };
-
-
 
 void printSyntax()
 {
