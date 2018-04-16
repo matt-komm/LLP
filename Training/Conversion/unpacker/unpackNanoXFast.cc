@@ -525,15 +525,15 @@ class NanoXTree
             
             if (jetorigin_fromLLP[jet]<0.5)
             {
-                //keep only 25% of all gluon jets
+                //keep only 20% of all gluon jets
                 if (jetorigin_isG[jet]>0.5)
                 {
-                    if (uniform_dist_(randomGenerator_)<0.75)
+                    if (uniform_dist_(randomGenerator_)<0.8)
                     {
                         return false;
                     }
                 }
-                /*
+                
                 //keep only 50% of all light jets
                 if (jetorigin_isUD[jet]>0.5 or jetorigin_isS[jet]>0.5)
                 {
@@ -541,7 +541,7 @@ class NanoXTree
                     {
                         return false;
                     }
-                }*/
+                }
             }
             
             return true;
