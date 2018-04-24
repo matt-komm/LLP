@@ -4,7 +4,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
 find_package(ROOT)
 
-include_directories(${TensorFlow_INCLUDE_DIRS} ${ROOT_INCLUDE_DIR})
+include_directories(${TensorFlow_INCLUDE_DIRS} ${ROOT_INCLUDE_DIR} ${PROJECT_SOURCE_DIR})
 
 add_executable(unpackNanoX
     unpackNanoX.cc

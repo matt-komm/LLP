@@ -1,5 +1,6 @@
 #include "TFile.h"
 #include "TTree.h"
+#include "TChain.h"
 #include "TTreeFormula.h"
 
 #include <fstream>
@@ -10,6 +11,9 @@
 #include <string>
 #include <random>
 #include <algorithm>
+
+#include "exprtk.hpp"
+
 
 class UnpackedTree
 {
@@ -106,8 +110,8 @@ class UnpackedTree
             tree_(new TTree("jets","jets"))
         {
 
-            tree_->SetDirectory(outputFile_); 
-            tree_->SetAutoSave(1000); //save after 1000 fills
+            tree_->SetDirectory(outputFile_);
+            tree_->SetAutoSave(200); //save after 200 fills
             tree_->Branch("jetorigin_isPU",&jetorigin_isPU,"jetorigin_isPU/I",bufferSize);
             tree_->Branch("jetorigin_isUndefined",&jetorigin_isUndefined,"jetorigin_isUndefined/I",bufferSize);
             
@@ -129,7 +133,7 @@ class UnpackedTree
             
             tree_->Branch("global_pt",&global_pt,"global_pt/F",bufferSize);
             tree_->Branch("global_eta",&global_eta,"global_eta/F",bufferSize);
-            tree_->Branch("fixedGridRhoFastjetAll",&global_rho,"fixedGridRhoFastjetAll/F",bufferSize);
+            tree_->Branch("global_rho",&global_rho,"global_rho/F",bufferSize);
 
             tree_->Branch("ncpf",&ncpf,"ncpf/I",bufferSize);
             tree_->Branch("cpf_trackEtaRel",&cpf_trackEtaRel,"cpf_trackEtaRel[ncpf]/F",bufferSize);
@@ -223,7 +227,7 @@ class UnpackedTree
 class NanoXTree
 {
     public:
-        std::shared_ptr<TFile> file_;
+        //std::shared_ptr<TFile> file_;
         TTree* tree_;
         
         unsigned int ientry_;
@@ -255,6 +259,8 @@ class NanoXTree
         float jetorigin_isUD[maxEntries];
         float jetorigin_isG[maxEntries];
         float jetorigin_fromLLP[maxEntries];
+        
+        //float jetorigin_llpmass_reco[maxEntries];
         
         unsigned int nglobal;
         float global_pt[maxEntries];
@@ -331,9 +337,31 @@ class NanoXTree
         std::mt19937 randomGenerator_;
         std::uniform_real_distribution<> uniform_dist_;
         
+        typedef exprtk::symbol_table<float> SymbolTable;
+        typedef exprtk::expression<float> Expression;
+        typedef exprtk::parser<float> Parser;
+        
+        //for the symbol table
+        float isB;
+        float isBB;
+        float isGBB;
+        float isLeptonic_B;
+        float isLeptonic_C;
+        float isC;
+        float isCC;
+        float isGCC;
+        float isS;
+        float isUD;
+        float isG;
+        float fromLLP;
+        
+        float rand;
+        
+        SymbolTable symbolTable_;
+        std::vector<Expression> selections_;
+        
     public:
-        NanoXTree(TFile* file, TTree* tree):
-            file_(file),
+        NanoXTree(TTree* tree, const std::vector<std::string>& selectors={}):
             tree_(tree),
             randomGenerator_(12345),
             uniform_dist_(0,1.)
@@ -365,6 +393,8 @@ class NanoXTree
             tree_->SetBranchAddress("jetorigin_isUD",&jetorigin_isUD);
             tree_->SetBranchAddress("jetorigin_isG",&jetorigin_isG);
             tree_->SetBranchAddress("jetorigin_fromLLP",&jetorigin_fromLLP);
+            
+            //tree_->SetBranchAddress("jetorigin_llpmass_reco",&jetorigin_llpmass_reco);
             
             tree_->SetBranchAddress("nglobal",&nglobal);
             tree_->SetBranchAddress("global_pt",&global_pt);
@@ -438,6 +468,34 @@ class NanoXTree
             tree_->SetBranchAddress("sv_enratio",&sv_enratio);
             
             getEvent(0,true);
+
+            symbolTable_.add_variable("isB",isB);
+            symbolTable_.add_variable("isBB",isBB);
+            symbolTable_.add_variable("isGBB",isGBB);
+            symbolTable_.add_variable("isLeptonic_B",isLeptonic_B);
+            symbolTable_.add_variable("isLeptonic_C",isLeptonic_C);
+            
+            symbolTable_.add_variable("isC",isC);
+            symbolTable_.add_variable("isCC",isCC);
+            symbolTable_.add_variable("isGCC",isGCC);
+            
+            symbolTable_.add_variable("isS",isS);
+            symbolTable_.add_variable("isUD",isUD);
+            symbolTable_.add_variable("isG",isG);
+            
+            symbolTable_.add_variable("fromLLP",fromLLP);
+            
+            symbolTable_.add_variable("rand",rand);
+            
+            for (auto selectstring: selectors)
+            {
+                std::cout<<"register selection: "<<selectstring<<std::endl;
+                Expression exp;
+                exp.register_symbol_table(symbolTable_);
+                Parser parser;
+                parser.compile(selectstring,exp);
+                selections_.emplace_back(std::move(exp));
+            }
         }
         
         //this class does not play well with memory -> prevent funny usage
@@ -523,24 +581,30 @@ class NanoXTree
                 return false;
             }
             
-            if (jetorigin_fromLLP[jet]<0.5)
+            //setup variables for exp evaluation
+            isB = jetorigin_isB[jet]>0.5 and jetorigin_fromLLP[jet]<0.5;
+            isBB = jetorigin_isBB[jet]>0.5 and jetorigin_fromLLP[jet]<0.5;
+            isGBB = jetorigin_isGBB[jet]>0.5 and jetorigin_fromLLP[jet]<0.5;
+            isLeptonic_B = jetorigin_isLeptonic_B[jet]>0.5 and jetorigin_fromLLP[jet]<0.5;
+            isLeptonic_C = jetorigin_isLeptonic_C[jet]>0.5 and jetorigin_fromLLP[jet]<0.5;
+            
+            isC = jetorigin_isC[jet]>0.5 and jetorigin_fromLLP[jet]<0.5;
+            isCC = jetorigin_isCC[jet]>0.5 and jetorigin_fromLLP[jet]<0.5;
+            isGCC = jetorigin_isGCC[jet]>0.5 and jetorigin_fromLLP[jet]<0.5;
+            
+            isS = jetorigin_isS[jet]>0.5 and jetorigin_fromLLP[jet]<0.5;
+            isUD = jetorigin_isUD[jet]>0.5 and jetorigin_fromLLP[jet]<0.5;
+            isG = jetorigin_isG[jet]>0.5 and jetorigin_fromLLP[jet]<0.5;
+            
+            fromLLP = jetorigin_fromLLP[jet]>0.5;
+            
+            rand = uniform_dist_(randomGenerator_);
+            
+            for (auto exp: selections_)
             {
-                //keep only 20% of all gluon jets
-                if (jetorigin_isG[jet]>0.5)
+                if (exp.value()<0.5)
                 {
-                    if (uniform_dist_(randomGenerator_)<0.8)
-                    {
-                        return false;
-                    }
-                }
-                
-                //keep only 50% of all light jets
-                if (jetorigin_isUD[jet]>0.5 or jetorigin_isS[jet]>0.5)
-                {
-                    if (uniform_dist_(randomGenerator_)<0.5)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
             
@@ -610,6 +674,8 @@ class NanoXTree
             unpackedTree.jetorigin_fromLLP = jetorigin_fromLLP[jet]>0.5;
             
             
+            
+            
             unpackedTree.global_pt = global_pt[jet];
             unpackedTree.global_eta = global_eta[jet];
             unpackedTree.global_rho = global_rho;
@@ -620,9 +686,9 @@ class NanoXTree
                 cpf_offset += cpflength_length[i];
             }
             
-            unpackedTree.ncpf = std::min<int>(25,cpflength_length[jet]);
-            
-            for (size_t i = 0; i < unpackedTree.ncpf; ++i)
+            unpackedTree.ncpf = cpflength_length[jet];
+            int ncpf = std::min<int>(25,cpflength_length[jet]);
+            for (size_t i = 0; i < ncpf; ++i)
             {
                 unpackedTree.cpf_trackEtaRel[i] = cpf_trackEtaRel[cpf_offset+i];
                 unpackedTree.cpf_trackPtRel[i] = cpf_trackPtRel[cpf_offset+i];
@@ -645,7 +711,7 @@ class NanoXTree
                 unpackedTree.cpf_jetmassdroprel[i] = cpf_jetmassdroprel[cpf_offset+i];
                 unpackedTree.cpf_relIso01[i] = cpf_relIso01[cpf_offset+i];
             }
-            for (size_t i = unpackedTree.ncpf; i < 25; ++i)
+            for (size_t i = ncpf; i < 25; ++i)
             {
                 unpackedTree.cpf_trackEtaRel[i] = 0;
                 unpackedTree.cpf_trackPtRel[i] = 0;
@@ -687,8 +753,9 @@ class NanoXTree
                 npf_offset += npflength_length[i];
             }
             
-            unpackedTree.nnpf = std::min<int>(25,npflength_length[jet]);
-            for (size_t i = 0; i < unpackedTree.nnpf; ++i)
+            unpackedTree.nnpf = npflength_length[jet];
+            int nnpf = std::min<int>(25,npflength_length[jet]);
+            for (size_t i = 0; i < nnpf; ++i)
             {
                 unpackedTree.npf_ptrel[i] = npf_ptrel[npf_offset+i];
                 unpackedTree.npf_deltaR[i] = npf_deltaR[npf_offset+i];
@@ -699,7 +766,7 @@ class NanoXTree
                 unpackedTree.npf_jetmassdroprel[i] = npf_jetmassdroprel[npf_offset+i];
                 unpackedTree.npf_relIso01[i] = npf_relIso01[npf_offset+i];
             }
-            for (size_t i = unpackedTree.nnpf; i < 25; ++i)
+            for (size_t i = nnpf; i < 25; ++i)
             {
                 unpackedTree.npf_ptrel[i] = 0;
                 unpackedTree.npf_deltaR[i] = 0;
@@ -718,8 +785,9 @@ class NanoXTree
                 sv_offset += svlength_length[i];
             }
             
-            unpackedTree.nsv = std::min<int>(4,svlength_length[jet]);
-            for (size_t i = 0; i < unpackedTree.nsv; ++i)
+            unpackedTree.nsv = svlength_length[jet];
+            int nsv = std::min<int>(4,svlength_length[jet]);
+            for (size_t i = 0; i < nsv; ++i)
             {
                 unpackedTree.sv_pt[i] = sv_pt[sv_offset+i];
                 unpackedTree.sv_mass[i] = sv_mass[sv_offset+i];
@@ -735,7 +803,7 @@ class NanoXTree
                 unpackedTree.sv_enratio[i] = sv_enratio[sv_offset+i];
             }
             
-            for (size_t i = unpackedTree.nsv; i < 4; ++i)
+            for (size_t i = nsv; i < 4; ++i)
             {
                 unpackedTree.sv_pt[i] = 0;
                 unpackedTree.sv_mass[i] = 0;
@@ -760,7 +828,7 @@ class NanoXTree
 void printSyntax()
 {
     std::cout<<"Syntax: "<<std::endl;
-    std::cout<<"          unpackNanoX outputfile N infile [infile [infile ...]]"<<std::endl<<std::endl;
+    std::cout<<"          unpackNanoX outputfile N testPercentage Nsplit isplit infile [infile [infile ...]]"<<std::endl<<std::endl;
 }
 
 inline bool ends_with(std::string const & value, std::string const & ending)
@@ -769,9 +837,15 @@ inline bool ends_with(std::string const & value, std::string const & ending)
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
+inline bool begins_with(std::string const & value, std::string const & start)
+{
+    if (start.size() > value.size()) return false;
+    return std::equal(start.begin(), start.end(), value.begin());
+}
+
 int main(int argc, char **argv)
 {
-    if (argc<4)
+    if (argc<7)
     {
         printSyntax();
         return 1;
@@ -788,30 +862,84 @@ int main(int argc, char **argv)
         return 1;
     }
     
+    int nTestFrac = std::atoi(argv[3]);
+    if (nTestFrac==0 and strcmp(argv[3],"0")!=0)
+    {
+        std::cout<<"Error - cannot convert '"<<argv[3]<<"' to integer"<<std::endl;
+        return 1;
+    }
+    else if (nTestFrac<=0 or nTestFrac>100)
+    {
+        std::cout<<"Error - testPercentage need to be in [0;100] but got '"<<argv[3]<<"'"<<std::endl;
+        return 1;
+    }
+    
+    int nSplit = std::atoi(argv[4]);
+    if (nSplit==0 and strcmp(argv[4],"0")!=0)
+    {
+        std::cout<<"Error - cannot convert '"<<argv[4]<<"' to integer"<<std::endl;
+        return 1;
+    }
+    if (nSplit<1)
+    {
+        std::cout<<"Error - nSplit need to be >0 but got '"<<argv[4]<<"'"<<std::endl;
+        return 1;
+    }
+    
+    int iSplit = std::atoi(argv[5]);
+    if (iSplit==0 and strcmp(argv[5],"0")!=0)
+    {
+        std::cout<<"Error - cannot convert '"<<argv[5]<<"' to integer"<<std::endl;
+        return 1;
+    }
+    if (iSplit<0)
+    {
+        std::cout<<"Error - iSplit need to be >=0 and <nSplit (="<<nSplit<<") but got '"<<argv[5]<<"'"<<std::endl;
+        return 1;
+    }
+    
+    std::cout<<"output files: "<<nOutputs<<std::endl;
+    std::cout<<"test fraction: "<<nTestFrac<<"%"<<std::endl;
+    std::cout<<"total splits: "<<nSplit<<std::endl;
+    std::cout<<"current split: "<<iSplit<<std::endl;
+    
     std::vector<std::unique_ptr<NanoXTree>> trees;
     std::cout<<"Input files: "<<std::endl;
     
     std::vector<unsigned int> entries;
     unsigned int total_entries = 0;
     
-    std::vector<std::string> inputFileNames;
-    for (unsigned int iarg = 3; iarg<argc; ++iarg)
+    std::vector<std::vector<std::string>> inputFileNames;
+    std::vector<std::vector<std::string>> selectors;
+    for (unsigned int iarg = 6; iarg<argc; ++iarg)
     {
         std::string s(argv[iarg]);
         if (ends_with(s,".root"))
         {
-            inputFileNames.push_back(s);
+            inputFileNames.push_back(std::vector<std::string>{s});
+            selectors.push_back(std::vector<std::string>{});
         }
         else if(ends_with(s,".txt"))
         {
             std::ifstream input(s);
+            std::vector<std::string> files;
+            std::vector<std::string> select;
             for( std::string line; getline( input, line ); )
             {
                 if (line.size()>0)
                 {
-                    inputFileNames.push_back(line);
+                    if (begins_with(line,"#"))
+                    {
+                        select.emplace_back(line.begin()+1,line.end());
+                    }
+                    else
+                    {
+                        files.push_back(line);
+                    }
                 }
             }
+            selectors.push_back(select);
+            inputFileNames.push_back(files);
         }
         else
         {
@@ -820,37 +948,52 @@ int main(int argc, char **argv)
         }
     }
     
-    for (const auto& inputFileName: inputFileNames)
+    for (size_t i = 0; i < inputFileNames.size(); ++i)
     {
-        //std::cout<<"   "<<argv[iarg]<<", nEvents="<<;
-        TFile* file = TFile::Open(inputFileName.c_str());
-        if (not file)
+        auto inputFileNameList = inputFileNames[i];
+        TChain* chain = new TChain("Events","Events");
+        for (const auto& inputFileName: inputFileNameList)
         {
-            std::cout<<"File '"<<inputFileName<<"' cannot be read"<<std::endl;
-            continue;
+            //std::cout<<"   "<<argv[iarg]<<", nEvents="<<;
+            TFile* file = TFile::Open(inputFileName.c_str());
+            if (not file)
+            {
+                std::cout<<"File '"<<inputFileName<<"' cannot be read"<<std::endl;
+                continue;
+            }
+            
+            TTree* tree = dynamic_cast<TTree*>(file->Get("Events"));
+            
+            if (not tree)
+            {
+                std::cout<<"Tree in file '"<<inputFileName<<"' cannot be read"<<std::endl;
+                continue;
+            }
+            int nEvents = tree->GetEntries();
+            std::cout<<"   "<<inputFileName<<", nEvents="<<nEvents<<std::endl;
+            file->Close();
+            chain->AddFile(inputFileName.c_str());
         }
-        
-        TTree* tree = dynamic_cast<TTree*>(file->Get("Events"));
-        
-        if (not tree)
-        {
-            std::cout<<"Tree in file '"<<inputFileName<<"' cannot be read"<<std::endl;
-            continue;
-        }
-        int nEvents = tree->GetEntries();
-        std::cout<<"   "<<inputFileName<<", nEvents="<<nEvents<<std::endl;
+        int nEvents = chain->GetEntries();
+        std::cout<<"Total per chain:  "<<nEvents<<std::endl;
         entries.push_back(nEvents);
         total_entries += nEvents;
-        trees.emplace_back(std::make_unique<NanoXTree>(file,tree));
+        trees.emplace_back(std::make_unique<NanoXTree>(chain,selectors[i]));
     }
+    std::cout<<"Total number of events: "<<total_entries<<std::endl;
+    std::vector<std::unique_ptr<UnpackedTree>> unpackedTreesTrain;
+    std::vector<std::vector<int>> eventsPerClassPerFileTrain(12,std::vector<int>(nOutputs,0));
     
-    std::vector<std::unique_ptr<UnpackedTree>> unpackedTrees;
-    std::vector<std::vector<int>> eventsPerClassPerFile(12,std::vector<int>(nOutputs,0));
+    std::vector<std::unique_ptr<UnpackedTree>> unpackedTreesTest;
+    std::vector<std::vector<int>> eventsPerClassPerFileTest(12,std::vector<int>(nOutputs,0));
 
     for (unsigned int i = 0; i < nOutputs; ++i)
     {
-        unpackedTrees.emplace_back(std::make_unique<UnpackedTree>(
-            std::string(argv[1])+"_"+std::to_string(i+1)+".root"
+        unpackedTreesTrain.emplace_back(std::make_unique<UnpackedTree>(
+            std::string(argv[1])+"_train"+std::to_string(iSplit+1)+"_"+std::to_string(i+1)+".root"
+        ));
+        unpackedTreesTest.emplace_back(std::make_unique<UnpackedTree>(
+            std::string(argv[1])+"_test"+std::to_string(iSplit+1)+"_"+std::to_string(i+1)+".root"
         ));
     }
     
@@ -861,6 +1004,11 @@ int main(int argc, char **argv)
         if (ientry%10000==0)
         {
             std::cout<<"Processing ... "<<100.*ientry/total_entries<<std::endl;
+        }
+        //use entry number for global splitting; but hash value to split test/train
+        if ((ientry%nSplit)!=iSplit)
+        {
+            continue;
         }
     
         //choose input file pseudo-randomly
@@ -887,23 +1035,43 @@ int main(int argc, char **argv)
         trees[ifile]->nextEvent();
         readEvents[ifile]+=1;
         
-        for (size_t j = 0; j <trees[ifile]->njets(); ++j)
+        for (size_t j = 0; j < std::min<int>(8,trees[ifile]->njets()); ++j)
         {
             if (trees[ifile]->isSelected(j))
             {
                 int jet_class = trees[ifile]->getJetClass(j);
-                if (jet_class>=0 and jet_class<eventsPerClassPerFile.size())
+                
+                if (hash%100<nTestFrac)
                 {
-                    unsigned int ofile = std::distance(
-                        eventsPerClassPerFile[jet_class].begin(), 
-                        std::min_element(
-                            eventsPerClassPerFile[jet_class].begin(), 
-                            eventsPerClassPerFile[jet_class].end()
-                        )
-                    );
-                    //std::cout<<ofile<<std::endl;
-                    eventsPerClassPerFile[jet_class][ofile]+=1;
-                    trees[ifile]->unpackJet(j,*unpackedTrees[ofile]);
+                    if (jet_class>=0 and jet_class<eventsPerClassPerFileTest.size())
+                    {
+                        unsigned int ofile = std::distance(
+                            eventsPerClassPerFileTest[jet_class].begin(), 
+                            std::min_element(
+                                eventsPerClassPerFileTest[jet_class].begin(), 
+                                eventsPerClassPerFileTest[jet_class].end()
+                            )
+                        );
+                        //std::cout<<ofile<<std::endl;
+                        eventsPerClassPerFileTest[jet_class][ofile]+=1;
+                        trees[ifile]->unpackJet(j,*unpackedTreesTest[ofile]);
+                    }
+                }
+                else
+                {
+                    if (jet_class>=0 and jet_class<eventsPerClassPerFileTrain.size())
+                    {
+                        unsigned int ofile = std::distance(
+                            eventsPerClassPerFileTrain[jet_class].begin(), 
+                            std::min_element(
+                                eventsPerClassPerFileTrain[jet_class].begin(), 
+                                eventsPerClassPerFileTrain[jet_class].end()
+                            )
+                        );
+                        //std::cout<<ofile<<std::endl;
+                        eventsPerClassPerFileTrain[jet_class][ofile]+=1;
+                        trees[ifile]->unpackJet(j,*unpackedTreesTrain[ofile]);
+                    }
                 }
             }
         }
@@ -913,39 +1081,34 @@ int main(int argc, char **argv)
     {
         std::cout<<"infile "<<i<<": found = "<<entries[i]<<", read = "<<readEvents[i]<<std::endl;
     }
-    
-    for (size_t c = 0; c < eventsPerClassPerFile.size(); ++c)
+    std::cout<<"----- Train ----- "<<std::endl;
+    for (size_t c = 0; c < eventsPerClassPerFileTrain.size(); ++c)
     {
         std::cout<<"jet class "<<c<<": ";
         for (size_t i = 0; i < nOutputs; ++i)
         {
-            std::cout<<eventsPerClassPerFile[c][i]<<", ";
+            std::cout<<eventsPerClassPerFileTrain[c][i]<<", ";
+        }
+        std::cout<<std::endl;
+    }
+    std::cout<<"----- Test ----- "<<std::endl;
+    for (size_t c = 0; c < eventsPerClassPerFileTest.size(); ++c)
+    {
+        std::cout<<"jet class "<<c<<": ";
+        for (size_t i = 0; i < nOutputs; ++i)
+        {
+            std::cout<<eventsPerClassPerFileTest[c][i]<<", ";
         }
         std::cout<<std::endl;
     }
     
     
-    /*
-    for (unsigned int i = 0; i < trees.back().entries(); ++i)
+    for (auto& unpackedTree: unpackedTreesTrain)
     {
-        if (i%1000==0)
-        {
-            std::cout<<"Processing ... "<<100.*i/trees.back().entries()<<std::endl;
-        }
-        for (size_t j = 0; j <trees.back().njets(i); ++j)
-        {
-            if (isSelected)
-        
-            int classIndex = trees.back().unpackJet(i,j,unpackedTrees.back());
-            if (classIndex>0 and classIndex<=12)
-            {
-                eventsPerClassPerFile[classIndex-1]
-            }
-        }
+        unpackedTree->close();
     }
-    */
     
-    for (auto& unpackedTree: unpackedTrees)
+    for (auto& unpackedTree: unpackedTreesTest)
     {
         unpackedTree->close();
     }
