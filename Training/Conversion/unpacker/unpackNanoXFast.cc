@@ -576,7 +576,12 @@ class NanoXTree
                 return false;
             }
             
-            if (jetorigin_isPU[jet]>0.5 or jetorigin_isUndefined[jet]>0.5)
+            if (jetorigin_isUndefined[jet]>0.5)
+            {
+                return false;
+            }
+            
+            if (jetorigin_isPU[jet]>0.5)
             {
                 return false;
             }
@@ -613,6 +618,7 @@ class NanoXTree
         
         int getJetClass(unsigned int jet)
         {
+            //if (jetorigin_isPU[jet]>0.5) return 11;
             if (jetorigin_fromLLP[jet]<0.5)
             {
                 if  (jetorigin_isB[jet]>0.5) return 0;
@@ -898,6 +904,7 @@ int main(int argc, char **argv)
         return 1;
     }
     
+    std::cout<<"output file prefix: "<<argv[1]<<std::endl;
     std::cout<<"output files: "<<nOutputs<<std::endl;
     std::cout<<"test fraction: "<<nTestFrac<<"%"<<std::endl;
     std::cout<<"total splits: "<<nSplit<<std::endl;
