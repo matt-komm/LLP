@@ -539,7 +539,7 @@ class NanoXTree
        
         inline int njets()
         {
-            return nJet;
+            return nglobal; //note jets in nanoaod are store also below pt<20 GeV while tagger info is only store for jets pt>20
         }
         
         bool isSelected(unsigned int jet)
@@ -555,6 +555,7 @@ class NanoXTree
             if (std::fabs(Jet_eta[jet]/global_eta[jet]-1)>0.01)
             {
                 std::cout<<"Encountered mismatch between standard nanoaod jets and xtag info"<<std::endl;
+                std::cout<<jet<<": pt="<<Jet_pt[jet]<<"/"<<std::pow(10.,global_pt[jet])<<", "<<Jet_eta[jet]<<"/"<<global_eta[jet]<<std::endl;
                 return false;
             }
             
@@ -937,7 +938,7 @@ int main(int argc, char **argv)
                 {
                     if (begins_with(line,"#"))
                     {
-                        select.emplace_back(line.begin()+1,line.end());
+                            select.emplace_back(line.begin()+1,line.end());
                     }
                     else
                     {
@@ -985,7 +986,7 @@ int main(int argc, char **argv)
         std::cout<<"Total per chain:  "<<nEvents<<std::endl;
         entries.push_back(nEvents);
         total_entries += nEvents;
-        trees.emplace_back(std::make_unique<NanoXTree>(chain,selectors[i]));
+        trees.emplace_back(std::unique_ptr<NanoXTree>(new NanoXTree(chain,selectors[i])));
     }
     std::cout<<"Total number of events: "<<total_entries<<std::endl;
     std::vector<std::unique_ptr<UnpackedTree>> unpackedTreesTrain;
@@ -996,12 +997,12 @@ int main(int argc, char **argv)
 
     for (unsigned int i = 0; i < nOutputs; ++i)
     {
-        unpackedTreesTrain.emplace_back(std::make_unique<UnpackedTree>(
+        unpackedTreesTrain.emplace_back(std::unique_ptr<UnpackedTree>(new UnpackedTree(
             std::string(argv[1])+"_train"+std::to_string(iSplit+1)+"_"+std::to_string(i+1)+".root"
-        ));
-        unpackedTreesTest.emplace_back(std::make_unique<UnpackedTree>(
+        )));
+        unpackedTreesTest.emplace_back(std::unique_ptr<UnpackedTree>(new UnpackedTree(
             std::string(argv[1])+"_test"+std::to_string(iSplit+1)+"_"+std::to_string(i+1)+".root"
-        ));
+        )));
     }
     
     

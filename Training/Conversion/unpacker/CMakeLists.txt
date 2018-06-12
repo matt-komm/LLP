@@ -15,3 +15,10 @@ add_executable(unpackNanoXFast
     unpackNanoXFast.cc
 )
 target_link_libraries(unpackNanoXFast ${ROOT_LIBRARIES} -lTreePlayer)
+
+add_executable(unpackNanoXFastGan
+    unpackNanoXFastGan.cc
+)
+target_link_libraries(unpackNanoXFastGan ${ROOT_LIBRARIES} -lTreePlayer)
+
+add_definitions(-std=c++11)
